@@ -1,0 +1,42 @@
+[
+  {
+    "id": "m_1",
+    "name": "Aurora Traders",
+    "country": "India",
+    "status": "active",
+    "monthlyVolume": 125000,
+    "chargebackRatio": 1.2,
+    "risk": "low",
+    "description": "Electronics wholesaler"
+  },
+  {
+    "id": "m_2",
+    "name": "Nord Goods",
+    "country": "Sweden",
+    "status": "paused",
+    "monthlyVolume": 72000,
+    "chargebackRatio": 2.5,
+    "risk": "medium",
+    "description": "Homeware & kitchen goods"
+  },
+  {
+    "id": "m_3",
+    "name": "South Peak",
+    "country": "Brazil",
+    "status": "blocked",
+    "monthlyVolume": 9800,
+    "chargebackRatio": 4.8,
+    "risk": "high",
+    "description": "Fashion & apparel"
+  },
+  {
+    "id": "m_4",
+    "name": "Metro Supplies",
+    "country": "India",
+    "status": "active",
+    "monthlyVolume": 45000,
+    "chargebackRatio": 0.9,
+    "risk": "low",
+    "description": "Office supplies"
+  }
+]
