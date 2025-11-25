@@ -38,5 +38,65 @@
     "chargebackRatio": 0.9,
     "risk": "low",
     "description": "Office supplies"
+  },
+  {
+    "id": "m_5",
+    "name": "Pacific Trading Co",
+    "country": "USA",
+    "status": "active",
+    "monthlyVolume": 215000,
+    "chargebackRatio": 0.5,
+    "risk": "low",
+    "description": "International import/export"
+  },
+  {
+    "id": "m_6",
+    "name": "Euro Fashion Hub",
+    "country": "France",
+    "status": "active",
+    "monthlyVolume": 98000,
+    "chargebackRatio": 1.8,
+    "risk": "medium",
+    "description": "Designer clothing & accessories"
+  },
+  {
+    "id": "m_7",
+    "name": "Digital Solutions Ltd",
+    "country": "UK",
+    "status": "paused",
+    "monthlyVolume": 56000,
+    "chargebackRatio": 3.2,
+    "risk": "high",
+    "description": "Software & digital products"
+  },
+  {
+    "id": "m_8",
+    "name": "Asian Market",
+    "country": "Singapore",
+    "status": "active",
+    "monthlyVolume": 178000,
+    "chargebackRatio": 0.7,
+    "risk": "low",
+    "description": "Food & beverage distributor"
+  },
+  {
+    "id": "m_9",
+    "name": "Green Earth Products",
+    "country": "Germany",
+    "status": "active",
+    "monthlyVolume": 82000,
+    "chargebackRatio": 1.1,
+    "risk": "low",
+    "description": "Eco-friendly household items"
+  },
+  {
+    "id": "m_10",
+    "name": "Tech Innovators",
+    "country": "Canada",
+    "status": "blocked",
+    "monthlyVolume": 12000,
+    "chargebackRatio": 5.2,
+    "risk": "high",
+    "description": "Electronics & gadgets"
   }
 ]
