@@ -1,12 +1,15 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import useUIStore from '../../store/useUIStore'
+import useAuthStore from '../../store/useAuthStore'
 
-export default function TopNav({ setIsSidebarOpen }) {
+export default function TopNav() {
   const navigate = useNavigate()
+  const { toggleSidebar } = useUIStore()
+  const logout = useAuthStore((state) => state.logout)
 
   const handleLogout = () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("user")
+    logout()
     navigate("/")
   }
 
@@ -17,7 +20,7 @@ export default function TopNav({ setIsSidebarOpen }) {
           {/* Left side - Title */}
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsSidebarOpen && setIsSidebarOpen(prev => !prev)}
+              onClick={toggleSidebar}
               className="md:hidden text-slate-600 hover:text-slate-900 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,35 +1,51 @@
 import React, { useState, useEffect } from 'react'
-import merchantsData from '../../data/merchants.json'
 import MerchantTable from './MerchantTable'
 import MerchantForm from './MerchantForm'
+import Modal from '../../Components/UI/Modal'
+import useMerchantStore from '../../store/useMerchantStore'
 
 export default function Merchants() {
-  const [list, setList] = useState([])
+  const { merchants, loading, initializeMerchants, addMerchant, removeMerchant, setLoading } = useMerchantStore()
   const [showAdd, setShowAdd] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [showDelete, setShowDelete] = useState(false)
+  const [toDelete, setToDelete] = useState(null)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   useEffect(() => {
     // small fake-load so UI shows loading state like real apps
+    setLoading(true)
     const t = setTimeout(() => {
-      setList(merchantsData)
-      setLoading(false)
+      initializeMerchants()
     }, 500)
 
     return () => clearTimeout(t)
   }, [])
 
-  const handleUpdate = (updatedMerchant) => {
-    // simple replace by id
-    setList((prev) => prev.map((m) => (m.id === updatedMerchant.id ? updatedMerchant : m)))
-  }
-
   const handleAdd = (newMerchant) => {
-    // append new merchant
-    setList((prev) => [...prev, newMerchant])
+    addMerchant(newMerchant)
     setShowAdd(false)
+    setSuccessMessage(`${newMerchant.name} was added successfully.`)
+    setShowSuccess(true)
   }
 
-  
+  const handleRemove = (id) => {
+    removeMerchant(id)
+  }
+
+  const handleRequestRemove = (merchant) => {
+    setToDelete(merchant)
+    setShowDelete(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (!toDelete) return
+    handleRemove(toDelete.id)
+    setShowDelete(false)
+    setSuccessMessage(`${toDelete.name} was removed.`)
+    setShowSuccess(true)
+    setToDelete(null)
+  }
 
   if (loading) {
     return (
@@ -55,9 +71,30 @@ export default function Merchants() {
         <p className="text-slate-600">View and manage merchant accounts</p>
       </div>
 
-      <MerchantTable merchants={list} onAddMerchant={() => setShowAdd(true)} />
+      <MerchantTable merchants={merchants} onAddMerchant={() => setShowAdd(true)} onRemove={handleRemove} onRequestRemove={handleRequestRemove} />
 
-      {showAdd && <MerchantForm onClose={() => setShowAdd(false)} onSubmit={handleAdd} />}
+      <Modal open={showAdd} title={showAdd && 'Add Merchant'} onClose={() => setShowAdd(false)}>
+        <MerchantForm onClose={() => setShowAdd(false)} onSubmit={handleAdd} />
+      </Modal>
+
+      <Modal open={showSuccess} title="Merchant Added" onClose={() => setShowSuccess(false)}>
+        <div className="space-y-4">
+          <p className="text-slate-700">{successMessage}</p>
+          <div className="flex justify-end">
+            <button onClick={() => setShowSuccess(false)} className="px-4 py-2 bg-blue-600 text-white rounded">Close</button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={showDelete} title="Confirm Removal" onClose={() => setShowDelete(false)}>
+        <div className="space-y-4">
+          <p className="text-slate-700">Are you sure you want to remove <strong>{toDelete?.name}</strong>? This will delete it from local storage.</p>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setShowDelete(false)} className="px-4 py-2 bg-slate-100 rounded">Cancel</button>
+            <button onClick={handleConfirmDelete} className="px-4 py-2 bg-red-600 text-white rounded">Delete</button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

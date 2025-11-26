@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import merchantsData from '../../data/merchants.json'
+import Modal from '../../Components/UI/Modal'
+import PropTypes from 'prop-types'
+import useMerchantStore from '../../store/useMerchantStore'
 
-// Merchant detail page — simpler, clearer names and straightforward layout
+// Merchant detail page
 export default function MerchantDetailPage() {
   const { id: merchantId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  
+  const { merchants, updateMerchant } = useMerchantStore()
 
   // If we navigated here from the table, that route may include the merchant in state
-  const navMerchant = location.state && location.state.merchant
+  const navMerchant = location.state?.merchant
   const [merchant, setMerchant] = useState(navMerchant || null)
 
   // Local form state for editable fields
@@ -19,10 +23,10 @@ export default function MerchantDetailPage() {
 
   useEffect(() => {
     if (!merchant) {
-      const found = merchantsData.find((m) => m.id === merchantId)
+      const found = merchants.find((m) => m.id === merchantId)
       setMerchant(found || null)
     }
-  }, [merchantId, merchant])
+  }, [merchantId, merchant, merchants])
 
   useEffect(() => {
     if (merchant) setForm({ status: merchant.status, risk: merchant.risk })
@@ -30,8 +34,8 @@ export default function MerchantDetailPage() {
 
   if (!merchant) {
     return (
-      <div className="p-6">
-        <button onClick={() => navigate('/merchants')} className="text-blue-600 underline mb-4">Back to merchants</button>
+      <div className="p-6 container mx-auto max-w-3xl">
+        <button onClick={() => navigate('/merchants', { replace: true })} className="text-blue-600 underline mb-4">Back to merchants</button>
         <div className="bg-white rounded-lg shadow-md p-6">Merchant not found</div>
       </div>
     )
@@ -54,84 +58,79 @@ export default function MerchantDetailPage() {
 
   const save = () => {
     setIsSaving(true)
-    // Demo-only: update local component state and navigate back
     setTimeout(() => {
+      // Update the merchant in the Zustand store
+      updateMerchant(merchantId, form)
       setMerchant((m) => ({ ...m, ...form }))
       setIsSaving(false)
-      alert('Saved (local only)')
-      navigate('/merchants')
+      alert('Saved successfully')
+      navigate('/merchants', { replace: true })
     }, 400)
   }
 
+  const getChargebackColor = (ratio) => {
+    if (ratio > 2) return 'text-red-600'
+    if (ratio > 1) return 'text-orange-600'
+    return 'text-green-600'
+  }
+
+  // prevent background scroll while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{merchant.name}</h1>
-          <p className="text-sm text-slate-600">Merchant details</p>
+    <Modal open={true} title={merchant.name} onClose={() => navigate('/merchants', { replace: true })}>
+      <div className="text-sm text-slate-700 mb-3">{merchant.description || 'No description provided.'}</div>
+
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-sm text-slate-600">Chargeback</div>
+        <div className={`text-sm font-semibold ${getChargebackColor(merchant.chargebackRatio)}`}>{merchant.chargebackRatio}%</div>
+      </div>
+
+      {confirmingActivation && (
+        <div className="mb-3 p-3 bg-orange-50 rounded">
+          <div className="text-sm font-medium text-orange-800">Confirm activation — high risk merchant</div>
+          <div className="mt-2 flex gap-2">
+            <button onClick={confirmActivate} className="px-3 py-1 bg-orange-600 text-white rounded">Yes</button>
+            <button onClick={() => setConfirmingActivation(false)} className="px-3 py-1 border rounded">Cancel</button>
+          </div>
         </div>
-        <div>
-          <button onClick={() => navigate('/merchants')} className="px-3 py-1 border rounded">Back</button>
+      )}
+
+      <div className="mb-3">
+        <div className="text-sm text-slate-600 mb-2">Status</div>
+        <div className="flex gap-2">
+          {['active','paused','blocked'].map((opt) => (
+            <label key={opt} className="flex items-center gap-2 text-sm">
+              <input type="radio" name="status" value={opt} checked={form.status === opt} onChange={() => updateField('status', opt)} />
+              <span className="capitalize">{opt}</span>
+            </label>
+          ))}
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-6">
-        {merchant.chargebackRatio > 2 && form.status === 'active' && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded">
-            <strong className="text-red-800">High chargeback warning</strong>
-            <div className="text-sm text-red-700 mt-1">This merchant has a chargeback ratio of {merchant.chargebackRatio}% while active.</div>
-          </div>
-        )}
-
-        {confirmingActivation && (
-          <div className="bg-orange-50 border-l-4 border-orange-500 p-3 rounded">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-sm font-semibold text-orange-800">Confirm activation</div>
-                <div className="text-sm text-orange-700">This merchant is high risk — proceed to activate?</div>
-              </div>
-
-              <div className="flex gap-2">
-                <button onClick={confirmActivate} className="px-3 py-1 bg-orange-600 text-white rounded">Yes</button>
-                <button onClick={() => setConfirmingActivation(false)} className="px-3 py-1 border rounded">Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Field label="Merchant ID" value={merchant.id} mono />
-          <Field label="Country" value={merchant.country} />
-          <Field label="Monthly Volume" value={`$${merchant.monthlyVolume.toLocaleString()}`} bold />
-
-          <div>
-            <label className="block text-sm text-slate-700 mb-1">Chargeback Ratio</label>
-            <div className={`px-3 py-2 rounded bg-slate-50 text-sm font-semibold ${merchant.chargebackRatio > 2 ? 'text-red-600' : merchant.chargebackRatio > 1 ? 'text-orange-600' : 'text-green-600'}`}>
-              {merchant.chargebackRatio}%
-            </div>
-          </div>
-
-          {merchant.description && <Field label="Description" value={merchant.description} full />}
-        </div>
-
-        <div className="pt-4 border-t">
-          <h3 className="text-lg font-medium mb-3">Update</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <OptionGroup label="Status" value={form.status} onChange={(v) => updateField('status', v)} options={["active", "paused", "blocked"]} />
-            <OptionGroup label="Risk" value={form.risk} onChange={(v) => updateField('risk', v)} options={["low", "medium", "high"]} />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <button onClick={() => navigate('/merchants')} className="px-4 py-2 border rounded">Cancel</button>
-          <button onClick={save} disabled={isSaving} className="px-4 py-2 bg-blue-600 text-white rounded">{isSaving ? 'Saving...' : 'Save'}</button>
+      <div className="mb-4">
+        <div className="text-sm text-slate-600 mb-2">Risk</div>
+        <div className="flex gap-2">
+          {['low','medium','high'].map((opt) => (
+            <label key={opt} className="flex items-center gap-2 text-sm">
+              <input type="radio" name="risk" value={opt} checked={form.risk === opt} onChange={() => updateField('risk', opt)} />
+              <span className="capitalize">{opt}</span>
+            </label>
+          ))}
         </div>
       </div>
-    </div>
+
+      <div className="flex justify-end gap-2">
+        <button onClick={() => navigate('/merchants', { replace: true })} className="px-3 py-1 border rounded text-sm">Cancel</button>
+        <button onClick={save} disabled={isSaving} className="px-3 py-1 bg-blue-600 text-white rounded text-sm">{isSaving ? 'Saving...' : 'Save'}</button>
+      </div>
+    </Modal>
   )
 }
-
 function Field({ label, value, mono, bold, full }) {
   return (
     <div className={full ? 'md:col-span-2' : ''}>
@@ -140,24 +139,42 @@ function Field({ label, value, mono, bold, full }) {
         'px-3 py-2 rounded bg-slate-50 text-sm text-slate-900',
         mono ? 'font-mono' : '',
         bold ? 'font-semibold' : '',
-      ].join(' ')}>{value}</div>
+      ].join(' ')}>{String(value)}</div>
     </div>
   )
+}
+
+Field.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  mono: PropTypes.bool,
+  bold: PropTypes.bool,
+  full: PropTypes.bool,
 }
 
 function OptionGroup({ label, options, value, onChange }) {
   return (
     <div>
       <label className="block text-sm text-slate-700 mb-2">{label}</label>
-      <div className="space-y-2">
-        {options.map((opt) => (
-          <label key={opt} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-50">
-            <input type="radio" name={label} value={opt} checked={value === opt} onChange={() => onChange(opt)} className="w-4 h-4" />
-            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800">{opt}</span>
-          </label>
-        ))}
+      <div className="flex gap-3">
+        {options.map((opt) => {
+          const active = value === opt
+          return (
+            <label key={opt} className={`cursor-pointer select-none`}>
+              <input type="radio" name={label} value={opt} checked={active} onChange={() => onChange(opt)} className="sr-only" />
+              <div className={`px-3 py-2 rounded-md text-sm font-medium ${active ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800 hover:bg-slate-200'}`}>{opt}</div>
+            </label>
+          )
+        })}
       </div>
     </div>
   )
+}
+
+OptionGroup.propTypes = {
+  label: PropTypes.string.isRequired,
+  options: PropTypes.arrayOf(PropTypes.string).isRequired,
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
 }
 

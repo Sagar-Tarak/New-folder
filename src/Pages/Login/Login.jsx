@@ -5,9 +5,11 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
+import useAuthStore from "../../store/useAuthStore";
 
-function LoginPage({ onLogin }) {
+function LoginPage() {
   const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
 
   // Form values
   const [email, setEmail] = useState("");
@@ -50,8 +52,8 @@ function LoginPage({ onLogin }) {
         email === "admin@gmail.com" && password === "password";
 
       if (isValid) {
-        localStorage.setItem("token", "demo-token");
-        if (onLogin) onLogin(true);
+        const token = "demo-token";
+        login(token);
         navigate("/dashboard");
       } else {
         setError("Invalid credentials. Try admin@gmail.com / password");
