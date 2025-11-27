@@ -1,26 +1,27 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 const useAuthStore = create(
   persist(
     (set) => ({
+      // Auth state
       token: null,
       isAuthenticated: false,
 
-      // Login action
+      // Save token & mark as logged in
       login: (token) => {
-        set({ token, isAuthenticated: true })
+        set({ token, isAuthenticated: true });
       },
 
-      // Logout action
+      // Clear token & log out
       logout: () => {
-        set({ token: null, isAuthenticated: false })
+        set({ token: null, isAuthenticated: false });
       },
     }),
     {
-      name: 'auth-storage', // unique name for localStorage key
+      name: "auth-storage", // key used in localStorage
     }
   )
-)
+);
 
-export default useAuthStore
+export default useAuthStore;

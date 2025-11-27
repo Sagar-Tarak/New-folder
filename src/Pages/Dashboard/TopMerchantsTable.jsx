@@ -2,6 +2,7 @@ import React from "react";
 import { getRiskBadgeClasses } from "../../utils/dashboardUtils";
 
 function TopMerchantsTable({ merchants, loading }) {
+  // Loading skeleton
   if (loading) {
     return (
       <div className="animate-pulse space-y-3">
@@ -12,44 +13,75 @@ function TopMerchantsTable({ merchants, loading }) {
     );
   }
 
+  // Sort merchants by volume DESC
+  const sortedMerchants = [...merchants].sort(
+    (a, b) => b.monthlyVolume - a.monthlyVolume
+  );
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
+    <div className="overflow-x-auto w-full">
+      <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b border-slate-200">
-            <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Merchant</th>
-            <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Country</th>
-            <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Volume</th>
-            <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Status</th>
-            <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Risk</th>
+          <tr className="border-b border-slate-200 bg-slate-50">
+            {["Merchant", "Country", "Volume", "Status", "Risk"].map(
+              (header) => (
+                <th
+                  key={header}
+                  className="text-left py-2.5 px-4 font-semibold text-slate-700 whitespace-nowrap"
+                >
+                  {header}
+                </th>
+              )
+            )}
           </tr>
         </thead>
+
         <tbody>
-          {[...merchants]
-            .sort((a, b) => b.monthlyVolume - a.monthlyVolume)
-            .map((item) => (
-              <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="py-3 px-4 text-sm font-medium">{item.name}</td>
-                <td className="py-3 px-4 text-sm text-slate-600">{item.country}</td>
-                <td className="py-3 px-4 text-sm font-semibold text-slate-900">${(item.monthlyVolume / 1000).toFixed(0)}K</td>
-                <td className="py-3 px-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    item.status === "active"
-                      ? "bg-green-100 text-green-800"
-                      : item.status === "paused"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
-                  }`}>
-                    {item.status}
+          {sortedMerchants.map((merchant) => {
+            const statusColor =
+              merchant.status === "active"
+                ? "bg-green-100 text-green-800"
+                : merchant.status === "paused"
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-red-100 text-red-800";
+
+            return (
+              <tr
+                key={merchant.id}
+                className="border-b border-slate-100 hover:bg-slate-50 transition"
+              >
+                <td className="py-2.5 px-4 font-medium text-slate-900 whitespace-nowrap">
+                  {merchant.name}
+                </td>
+
+                <td className="py-2.5 px-4 text-slate-600 whitespace-nowrap">
+                  {merchant.country}
+                </td>
+
+                <td className="py-2.5 px-4 font-semibold text-slate-900 whitespace-nowrap">
+                  ${(merchant.monthlyVolume / 1000).toFixed(0)}K
+                </td>
+
+                <td className="py-2.5 px-4 whitespace-nowrap">
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}
+                  >
+                    {merchant.status}
                   </span>
                 </td>
-                <td className="py-3 px-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskBadgeClasses(item.risk)}`}>
-                    {item.risk}
+
+                <td className="py-2.5 px-4 whitespace-nowrap">
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getRiskBadgeClasses(
+                      merchant.risk
+                    )}`}
+                  >
+                    {merchant.risk}
                   </span>
                 </td>
               </tr>
-            ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

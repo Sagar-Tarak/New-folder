@@ -1,6 +1,6 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import merchantsData from '../data/merchants.json'
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import merchantsData from "../data/merchants.json";
 
 const useMerchantStore = create(
   persist(
@@ -8,53 +8,56 @@ const useMerchantStore = create(
       merchants: [],
       loading: false,
 
-      // Initialize merchants from persisted data or default data
+      // Load merchants (only once)
       initializeMerchants: () => {
         set((state) => {
-          // If already initialized with persisted data, don't override
+          // If store already has data (from persist), don't replace it
           if (state.merchants.length > 0) {
-            return { loading: false }
+            return { loading: false };
           }
-          // Otherwise use default data
-          return { merchants: merchantsData, loading: false }
-        })
+
+          // Otherwise load the default JSON data
+          return {
+            merchants: merchantsData,
+            loading: false,
+          };
+        });
       },
 
-      // Set loading state
-      setLoading: (loading) => set({ loading }),
+      // Update loading state
+      setLoading: (value) => set({ loading: value }),
 
-      // Add a new merchant
+      // Add new merchant
       addMerchant: (merchant) => {
         set((state) => ({
           merchants: [...state.merchants, merchant],
-        }))
+        }));
       },
 
-      // Remove a merchant by id
+      // Delete merchant by ID
       removeMerchant: (id) => {
         set((state) => ({
           merchants: state.merchants.filter((m) => m.id !== id),
-        }))
+        }));
       },
 
-      // Update a merchant
+      // Update merchant by ID
       updateMerchant: (id, updates) => {
         set((state) => ({
           merchants: state.merchants.map((m) =>
             m.id === id ? { ...m, ...updates } : m
           ),
-        }))
+        }));
       },
 
-      // Get merchant by id
-      getMerchantById: (id) => (state) => {
-        return state.merchants.find((m) => m.id === id)
-      },
+      // Get merchant by ID (selector style)
+      getMerchantById: (id) => (state) =>
+        state.merchants.find((m) => m.id === id),
     }),
     {
-      name: 'merchants-storage', // unique name for localStorage key
+      name: "merchants-storage", // key for localStorage
     }
   )
-)
+);
 
-export default useMerchantStore
+export default useMerchantStore;

@@ -1,289 +1,307 @@
-import React, { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import Table from '../../Components/UI/Table'
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import Table from "../../Components/UI/Table";
+import Dropdown from "../../Components/UI/Dropdown";
 
-export default function MerchantTable({ merchants, onMerchantClick, onAddMerchant, onRemove, onRequestRemove }) {
-  const [q, setQ] = useState('')
-  const [status, setStatus] = useState('all')
-  const [risk, setRisk] = useState('all')
-  const [sortField, setSortField] = useState('name')
-  const [sortDir, setSortDir] = useState('asc')
+export default function MerchantTable({
+  merchants,
+  onMerchantClick,
+  onAddMerchant,
+  onRemove,
+  onRequestRemove,
+}) {
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [risk, setRisk] = useState("all");
 
-  // filter merchants (keeps it simple)
+  const [sortField, setSortField] = useState("name");
+  const [sortDir, setSortDir] = useState("asc");
+
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Filtering
   const filtered = merchants.filter((m) => {
-    const matchesQ = m.name.toLowerCase().includes(q.toLowerCase())
-    const matchesStatus = status === 'all' || m.status === status
-    const matchesRisk = risk === 'all' || m.risk === risk
-    return matchesQ && matchesStatus && matchesRisk
-  })
+    const matchSearch = m.name.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = status === "all" || m.status === status;
+    const matchRisk = risk === "all" || m.risk === risk;
+    return matchSearch && matchStatus && matchRisk;
+  });
 
-  // sort logic (basic)
+  // Sorting
   const sorted = [...filtered].sort((a, b) => {
-    let aVal = a[sortField]
-    let bVal = b[sortField]
+    let aVal = a[sortField];
+    let bVal = b[sortField];
 
-    // handle string vs number
-    if (typeof aVal === 'string') aVal = aVal.toLowerCase()
-    if (typeof bVal === 'string') bVal = bVal.toLowerCase()
+    if (typeof aVal === "string") aVal = aVal.toLowerCase();
+    if (typeof bVal === "string") bVal = bVal.toLowerCase();
 
-    if (aVal < bVal) return sortDir === 'asc' ? -1 : 1
-    if (aVal > bVal) return sortDir === 'asc' ? 1 : -1
-    return 0
-  })
+    if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
 
-  const toggleSort = (field) => {
-    if (sortField === field) {
-      setSortDir((s) => (s === 'asc' ? 'desc' : 'asc'))
+  const handleSort = (field) => {
+    if (field === sortField) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
-      setSortField(field)
-      setSortDir('asc')
+      setSortField(field);
+      setSortDir("asc");
     }
-  }
+  };
 
-  // small sort indicator component to keep JSX readable
-  const SortIndicator = ({ field }) => {
-    if (field !== sortField) return <span className="text-slate-300">↕</span>
-    return sortDir === 'asc' ? <span className="text-blue-500">↑</span> : <span className="text-blue-500">↓</span>
-  }
+  const SortIcon = ({ field }) => {
+    if (field !== sortField) return <span className="text-slate-300">↕</span>;
+    return sortDir === "asc" ? (
+      <span className="text-blue-500">↑</span>
+    ) : (
+      <span className="text-blue-500">↓</span>
+    );
+  };
 
-  const getStatusClass = (status) => {
-    if (status === 'active') return 'bg-green-100 text-green-800'
-    if (status === 'paused') return 'bg-yellow-100 text-yellow-800'
-    return 'bg-red-100 text-red-800'
-  }
+  const badge = (status) => {
+    if (status === "active") return "bg-green-100 text-green-800";
+    if (status === "paused") return "bg-yellow-100 text-yellow-800";
+    return "bg-red-100 text-red-800";
+  };
 
-  const navigate = useNavigate()
-  const location = useLocation()
+  const resetFilters = () => {
+    setSearch("");
+    setStatus("all");
+    setRisk("all");
+  };
 
+  // Columns
   const columns = [
     {
-      key: 'name',
       header: (
-        <button
-          type="button"
-          onClick={() => toggleSort('name')}
-          className="cursor-pointer flex items-center gap-2 bg-transparent border-0 p-0"
-          aria-label="Sort by name"
-        >
-          Name <SortIndicator field="name" />
+        <button className="flex items-center gap-2" onClick={() => handleSort("name")}>
+          Name <SortIcon field="name" />
         </button>
       ),
-      accessor: 'name',
-    },
-    { key: 'country', header: 'Country', accessor: 'country' },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (m) => {
-        let statusClass = 'bg-red-100 text-red-800'
-        if (m.status === 'active') {
-          statusClass = 'bg-green-100 text-green-800'
-        } else if (m.status === 'paused') {
-          statusClass = 'bg-yellow-100 text-yellow-800'
-        }
-        return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}`}>{m.status}</span>
-        )
-      },
+      accessor: "name",
     },
     {
-      key: 'monthlyVolume',
       header: (
-        <button type="button" onClick={() => toggleSort('monthlyVolume')} className="cursor-pointer flex items-center gap-2 bg-transparent border-0 p-0" aria-label="Sort by monthly volume">
-          Monthly Volume <SortIndicator field="monthlyVolume" />
+        <button className="flex items-center gap-2" onClick={() => handleSort("country")}>
+          Country <SortIcon field="country" />
         </button>
       ),
-      render: (m) => <span className="text-sm font-semibold text-slate-900">${m.monthlyVolume.toLocaleString()}</span>,
+      accessor: "country",
     },
     {
-      key: 'chargebackRatio',
+      header: "Status",
+      render: (row) => (
+        <span className={`inline-block px-2 py-1 rounded-full text-sm ${badge(row.status)}`}>
+          {row.status}
+        </span>
+      ),
+    },
+    {
       header: (
-        <button type="button" onClick={() => toggleSort('chargebackRatio')} className="cursor-pointer flex items-center gap-2 bg-transparent border-0 p-0" aria-label="Sort by chargeback ratio">
-          Chargeback Ratio <SortIndicator field="chargebackRatio" />
+        <button className="flex items-center gap-2" onClick={() => handleSort("monthlyVolume")}>
+          Volume <SortIcon field="monthlyVolume" />
         </button>
       ),
-      render: (m) => {
-        let chargebackClass = 'text-green-600'
-        if (m.chargebackRatio > 2) {
-          chargebackClass = 'text-red-600'
-        } else if (m.chargebackRatio > 1) {
-          chargebackClass = 'text-orange-600'
-        }
-        return (
-          <span className={`text-sm font-medium ${chargebackClass}`}>{m.chargebackRatio}%</span>
-        )
-      },
+      render: (row) => new Intl.NumberFormat().format(row.monthlyVolume ?? 0),
     },
     {
-      key: 'risk',
-      header: 'Risk',
-      render: (m) => {
-        let riskClass = 'bg-red-100 text-red-800'
-        if (m.risk === 'low') {
-          riskClass = 'bg-blue-100 text-blue-800'
-        } else if (m.risk === 'medium') {
-          riskClass = 'bg-orange-100 text-orange-800'
-        }
-        return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${riskClass}`}>{m.risk}</span>
-        )
-      },
+      header: "Chargeback %",
+      accessor: "chargebackRatio",
+      render: (row) => `${row.chargebackRatio ?? "-"}%`,
     },
     {
-      key: 'actions',
-      header: 'Actions',
-      render: (m) => (
-        <div className="flex items-center gap-3">
+      header: "Risk",
+      render: (row) => <span className="uppercase text-sm">{row.risk}</span>,
+    },
+    {
+      header: "Actions",
+      key: "actions",
+      render: (row) => (
+        <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              if (onMerchantClick) return onMerchantClick(m)
-              navigate(`/merchants/${m.id}`, { state: { merchant: m, background: location } })
+              e.stopPropagation();
+              navigate(`/merchants/${row.id}`);
             }}
-            className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+            className="inline-flex items-center p-2 rounded hover:bg-slate-100 text-blue-600"
+            aria-label={`View ${row.name}`}
+            title="View"
           >
-            View Details
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" />
+              <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
           </button>
 
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              if (typeof onRequestRemove === 'function') {
-                onRequestRemove(m)
-                return
-              }
-              if (typeof onRemove === 'function') {
-                const ok = globalThis.confirm(`Remove merchant "${m.name}"? This will delete it from local storage.`)
-                if (ok) onRemove(m.id)
-              }
+              e.stopPropagation();
+              onRequestRemove?.(row);
             }}
-            className="text-red-600 hover:text-red-800 font-medium text-sm"
-            aria-label={`Remove ${m.name}`}
+            className="inline-flex items-center p-2 rounded hover:bg-slate-100 text-red-600"
+            aria-label={`Remove ${row.name}`}
+            title="Remove"
           >
-            Remove
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18" />
+              <path d="M8 6v12a2 2 0 002 2h4a2 2 0 002-2V6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+            </svg>
           </button>
         </div>
       ),
     },
-  ]
+  ];
 
   return (
-    <div className="space-y-4">
-      <div className="mb-4">
-        <div className="flex flex-col md:flex-row md:items-center gap-3">
-          <div className="flex items-center gap-3 w-full md:w-2/3">
-            <div className="relative w-full max-w-2xl">
-              <input
-                type="text"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search merchants"
-                className="w-full pl-10 pr-10 py-2 rounded-md border border-slate-200 bg-white text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
-              />
-              <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              {q && (
-                <button onClick={() => setQ('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">×</button>
-              )}
-            </div>
+    <div className="space-y-4 overflow-x-hidden">
 
-            <div className="hidden md:flex items-center gap-2">
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="text-sm px-2 py-2 rounded-md border border-slate-200 bg-white">
-                <option value="all">All statuses</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="blocked">Blocked</option>
-              </select>
+      {/* Search */}
+      <div className="space-y-3">
+        <div className="relative w-full">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search merchants"
+            className="w-full px-4 pr-10 py-2 border rounded-md"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+              ×
+            </button>
+          )}
+        </div>
 
-              <select value={risk} onChange={(e) => setRisk(e.target.value)} className="text-sm px-2 py-2 rounded-md border border-slate-200 bg-white">
-                <option value="all">All risk levels</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-              <button onClick={() => { setQ(''); setStatus('all'); setRisk('all') }} className="text-sm text-slate-600 hover:text-slate-800 ml-2">Clear</button>
-            </div>
-          </div>
+        {/* Mobile Filters Button */}
+        <button
+          onClick={() => setShowMobileFilters((p) => !p)}
+          className="md:hidden px-4 py-2 border rounded-md flex items-center justify-between bg-slate-50"
+        >
+          <span className="font-medium text-sm">Filters</span>
 
-          <div className="flex items-center gap-2 md:ml-auto">
-            <button onClick={() => { setQ(''); setStatus('all'); setRisk('all') }} className="text-sm text-slate-600 hover:text-slate-800">Clear</button>
+          <svg
+            className={`w-5 h-5 transition-transform ${showMobileFilters ? "rotate-180" : ""}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Mobile Slide Panel */}
+        <div
+          className={`md:hidden transition-all overflow-hidden ${
+            showMobileFilters ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="bg-white border rounded-lg p-4 space-y-4 shadow-sm">
+            <Dropdown
+              value={status}
+              onChange={setStatus}
+              options={[
+                { value: "all", label: "All statuses" },
+                { value: "active", label: "Active" },
+                { value: "paused", label: "Paused" },
+                { value: "blocked", label: "Blocked" },
+              ]}
+            />
+
+            <Dropdown
+              value={risk}
+              onChange={setRisk}
+              options={[
+                { value: "all", label: "All risks" },
+                { value: "low", label: "Low" },
+                { value: "medium", label: "Medium" },
+                { value: "high", label: "High" },
+              ]}
+            />
+
+            <button onClick={resetFilters} className="text-sm text-slate-600">
+              Clear filters
+            </button>
           </div>
         </div>
 
-        <div className="mt-3 md:hidden flex gap-2">
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="flex-1 text-sm px-2 py-2 rounded-md border border-slate-200 bg-white">
-            <option value="all">All statuses</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="blocked">Blocked</option>
-          </select>
-          <select value={risk} onChange={(e) => setRisk(e.target.value)} className="flex-1 text-sm px-2 py-2 rounded-md border border-slate-200 bg-white">
-            <option value="all">All risk levels</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-          <button onClick={() => { setQ(''); setStatus('all'); setRisk('all') }} className="text-sm text-slate-600 hover:text-slate-800">Clear</button>
-        </div>
-
-        {(q || status !== 'all' || risk !== 'all') && (
-          <div className="flex flex-wrap gap-3 mt-3 text-sm text-slate-600">
-            {q && (
-              <div className="flex items-center gap-2">
-                <span className="font-medium">Search:</span>
-                <span>{q}</span>
-                <button onClick={() => setQ('')} className="ml-1 text-slate-400 hover:text-slate-700">×</button>
-              </div>
-            )}
-            {status !== 'all' && (
-              <div className="flex items-center gap-2 capitalize">
-                <span className="font-medium">Status:</span>
-                <span>{status}</span>
-                <button onClick={() => setStatus('all')} className="ml-1 text-slate-400 hover:text-slate-700">×</button>
-              </div>
-            )}
-            {risk !== 'all' && (
-              <div className="flex items-center gap-2 capitalize">
-                <span className="font-medium">Risk:</span>
-                <span>{risk}</span>
-                <button onClick={() => setRisk('all')} className="ml-1 text-slate-400 hover:text-slate-700">×</button>
-              </div>
-            )}
+        {/* Desktop Filters */}
+        <div className="hidden md:flex gap-3">
+          <div className="w-40">
+            <Dropdown
+              value={status}
+              onChange={setStatus}
+              options={[
+                { value: "all", label: "All statuses" },
+                { value: "active", label: "Active" },
+                { value: "paused", label: "Paused" },
+                { value: "blocked", label: "Blocked" },
+              ]}
+            />
           </div>
-        )}
+
+          <div className="w-40">
+            <Dropdown
+              value={risk}
+              onChange={setRisk}
+              options={[
+                { value: "all", label: "All risks" },
+                { value: "low", label: "Low" },
+                { value: "medium", label: "Medium" },
+                { value: "high", label: "High" },
+              ]}
+            />
+          </div>
+        </div>
       </div>
 
+      {/* Summary */}
       <div className="flex justify-between items-center">
         <p className="text-sm text-slate-600">
-          Showing <span className="font-semibold text-slate-900">{sorted.length}</span> of <span className="font-semibold text-slate-900">{merchants.length}</span> merchants
+          Showing <b>{sorted.length}</b> of <b>{merchants.length}</b> merchants
         </p>
 
-        <button onClick={onAddMerchant} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        <button
+          onClick={onAddMerchant}
+          className="hidden sm:inline-flex px-4 py-2 bg-blue-600 text-white rounded-lg gap-2 items-center"
+        >
+          <svg className="w-5 h-5" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+            <path d="M12 4v16m8-8H4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Add Merchant
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <Table
-          columns={columns}
-          data={sorted}
-          onRowClick={(m) => {
-            if (onMerchantClick) return onMerchantClick(m)
-            navigate(`/merchants/${m.id}`, { state: { merchant: m, background: location } })
-          }}
-          emptyMessage={(
-            <div className="p-12 text-center">
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No merchants found</h3>
-              <p className="text-slate-600 mb-4">Try adjusting your search or filters.</p>
-              <button onClick={() => { setQ(''); setStatus('all'); setRisk('all') }} className="text-blue-600">Clear all filters</button>
-            </div>
-          )}
-        />
+      {/* Table */}
+      <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+        <div className="min-w-max"> {/* IMPORTANT FIX */}
+          <Table
+            columns={columns}
+            data={sorted}
+            onRowClick={(m) => {
+              if (onMerchantClick) return onMerchantClick(m);
+              navigate(`/merchants/${m.id}`, {
+                state: { merchant: m, background: location },
+              });
+            }}
+            emptyMessage={
+              <div className="p-12 text-center">
+                <h3 className="text-lg font-semibold mb-2">No merchants found</h3>
+                <p className="mb-4">Try adjusting your search or filters.</p>
+                <button onClick={resetFilters} className="text-blue-600">
+                  Clear all filters
+                </button>
+              </div>
+            }
+          />
+        </div>
       </div>
     </div>
-  )
+  );
 }

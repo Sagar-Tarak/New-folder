@@ -1,25 +1,20 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 
-const useUIStore = create(
-  persist(
-    (set) => ({
-      isSidebarOpen: true,
-      
-      // Toggle sidebar
-      toggleSidebar: () => {
-        set((state) => ({ isSidebarOpen: !state.isSidebarOpen }))
-      },
+// Initialize sidebar open state based on viewport width so mobile starts closed
+const isDesktop = typeof globalThis !== 'undefined' && globalThis.window?.innerWidth >= 768
 
-      // Set sidebar state explicitly
-      setSidebarOpen: (isOpen) => {
-        set({ isSidebarOpen: isOpen })
-      },
-    }),
-    {
-      name: 'ui-storage', // unique name for localStorage key
-    }
-  )
-)
+const useUIStore = create((set) => ({
+  isSidebarOpen: isDesktop,
+
+  // Toggle sidebar
+  toggleSidebar: () => {
+    set((state) => ({ isSidebarOpen: !state.isSidebarOpen }))
+  },
+
+  // Set sidebar state explicitly
+  setSidebarOpen: (isOpen) => {
+    set({ isSidebarOpen: isOpen })
+  },
+}))
 
 export default useUIStore

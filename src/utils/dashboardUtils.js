@@ -1,10 +1,13 @@
+// Count how many times a key value appears in an array
 export function countByKey(key, items) {
-  return items.reduce((acc, item) => {
-    acc[item[key]] = (acc[item[key]] || 0) + 1;
-    return acc;
+  return items.reduce((result, item) => {
+    const value = item[key];
+    result[value] = (result[value] || 0) + 1;
+    return result;
   }, {});
 }
 
+// Get color classes based on risk level
 export function getRiskBadgeClasses(risk) {
   switch (risk) {
     case "low":
@@ -18,16 +21,36 @@ export function getRiskBadgeClasses(risk) {
   }
 }
 
+// Calculate dashboard statistics
 export function computeStats(items) {
-  const totalVolume = items.reduce((sum, m) => sum + (m.monthlyVolume || 0), 0);
+  // Total monthly volume
+  const totalVolume = items.reduce(
+    (total, item) => total + (item.monthlyVolume || 0),
+    0
+  );
+
+  // Count active merchants
   const activeMerchants = items.filter((m) => m.status === "active").length;
+
+  // Average success rate
   const avgSuccessRate = items.length
-    ? (items.reduce((sum, m) => sum + (m.successRate || 0), 0) / items.length).toFixed(1)
-    : 0;
-  const avgChargeback = items.length
-    ? (items.reduce((sum, m) => sum + (m.chargebackRatio || m.chargebackRate || 0), 0) / items.length).toFixed(1)
+    ? (
+        items.reduce((sum, m) => sum + (m.successRate || 0), 0) /
+        items.length
+      ).toFixed(1)
     : 0;
 
+  // Average chargeback ratio
+  const avgChargeback = items.length
+    ? (
+        items.reduce(
+          (sum, m) => sum + (m.chargebackRatio || m.chargebackRate || 0),
+          0
+        ) / items.length
+      ).toFixed(1)
+    : 0;
+
+  // Count by risk and status
   const riskCounts = countByKey("risk", items);
   const statusCounts = countByKey("status", items);
 
